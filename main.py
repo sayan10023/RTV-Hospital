@@ -1,4 +1,6 @@
 import os
+import json
+import base64
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, redirect, url_for, session
 import firebase_admin
@@ -12,17 +14,34 @@ app = Flask(__name__)
 app.secret_key = "rtv_secret_hospital_key"
 
 # ================= FIREBASE SETUP =================
+# ================= FIREBASE SETUP =================
+
+cred = None
+
+firebase_base64 = os.getenv("FIREBASE_KEY_BASE64")
 firebase_key_path = os.getenv("FIREBASE_KEY_PATH")
 
-if not firebase_key_path:
-    raise Exception("FIREBASE_KEY_PATH not set in environment variables")
+if firebase_base64:
+    # Railway (Base64 env variable)
+    key_json = base64.b64decode(firebase_base64).decode("utf-8")
+    cred = credentials.Certificate(json.loads(key_json))
 
-cred = credentials.Certificate(firebase_key_path)
+elif firebase_key_path:
+    # Render / local with env path
+    cred = credentials.Certificate(firebase_key_path)
+
+elif os.path.exists("key.json"):
+    # Local fallback
+    cred = credentials.Certificate("key.json")
+
+else:
+    raise RuntimeError("Firebase credentials not found")
 
 if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 
 db = firestore.client()
+
 
 
 # ================= AUTO-INITIALIZE INVENTORY =================
