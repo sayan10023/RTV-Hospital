@@ -1,0 +1,12 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Firebase secrets
+key.json
+serviceAccountKey.json
+firebase_key.json
+
+# Env variables
+.env

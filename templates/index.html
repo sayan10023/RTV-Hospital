@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>St. Marina Multispecialty</title>
+    <meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: #f0f2f5; display: flex; min-height: 100vh; font-family: 'Inter', sans-serif; }
+        .sidebar { width: 260px; background: #001529; color: white; position: fixed; height: 100vh; }
+        .nav-link { color: #a6adb4; padding: 15px 25px; cursor: pointer; border-left: 4px solid transparent; transition: 0.2s; }
+        .nav-link:hover, .nav-link.active { background: #1890ff1a; color: #1890ff; border-left-color: #1890ff; }
+        .content { margin-left: 260px; padding: 40px; width: 100%; }
+        .card { border-radius: 12px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 20px; }
+        .section { display: none; }
+        .active-section { display: block; }
+        .ana-card { text-align: center; padding: 20px; border-bottom: 4px solid #1890ff; }
+        .day-header { background: #1890ff; color: white; padding: 10px; text-align: center; border-radius: 8px 8px 0 0; font-weight: bold; }
+        .inventory-item { border: 1px solid #dee2e6; padding: 10px; border-radius: 8px; margin-bottom: 10px; background: #fff; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="p-4 text-center border-bottom border-secondary">
+        <h4 class="text-info"><i class="fa-solid fa-house-medical"></i> St. Marina</h4>
+    </div>
+    <div class="nav flex-column mt-3">
+        <a class="nav-link active" onclick="showSection('home', this)"><i class="fa-solid fa-chart-line me-2"></i> Analytics</a>
+        <a class="nav-link" onclick="showSection('admission', this)"><i class="fa-solid fa-user-plus me-2"></i> Admission</a>
+        <a class="nav-link" onclick="showSection('doctor', this)"><i class="fa-solid fa-user-doctor me-2"></i> Doctor Form</a>
+        <a class="nav-link" onclick="showSection('history', this)"><i class="fa-solid fa-clock-history me-2"></i> Patient History</a>
+        <a class="nav-link" onclick="showSection('inventory', this)"><i class="fa-solid fa-boxes-stacked me-2"></i> Inventory</a>
+        <a href="/logout" class="nav-link text-danger mt-5"><i class="fa-solid fa-power-off me-2"></i> Logout</a>
+    </div>
+</div>
+
+<div class="content">
+
+    <div id="home" class="section active-section">
+        <h2 class="mb-4">📊 Analytics Dashboard</h2>
+        <div class="row g-3 mb-4">
+            <div class="col-md-3"><div class="card ana-card"><h6>Total Doctors</h6><h3>{{ doctors|length }}</h3></div></div>
+            <div class="col-md-3"><div class="card ana-card" style="border-color: #52c41a;"><h6>Total Patients</h6><h3>{{ patients|length }}</h3></div></div>
+            <div class="col-md-3"><div class="card ana-card" style="border-color: #f5222d;"><h6>Low Stock</h6><h3 class="text-danger">{{ low_stock_count }}</h3></div></div>
+            <div class="col-md-3"><div class="card ana-card" style="border-color: #13c2c2;"><h6>Daily Capacity</h6><h3>{{ total_appointments }}</h3></div></div>
+        </div>
+
+        <h4 class="mb-3">🛌 Bed Management</h4>
+        <div class="row g-3 mb-4">
+            <div class="col-md-4"><div class="card p-4 d-flex flex-row align-items-center"><i class="fa-solid fa-bed text-primary fs-3 me-3"></i><div><small>Available</small><h3>{{ available_beds }}/{{ total_beds }}</h3></div></div></div>
+            <div class="col-md-4"><div class="card p-4 d-flex flex-row align-items-center"><i class="fa-solid fa-user-check text-warning fs-3 me-3"></i><div><small>Booked</small><h3>{{ occupied_beds }}</h3></div></div></div>
+            <div class="col-md-4"><div class="card p-4 d-flex flex-row align-items-center border-start border-info border-5"><i class="fa-solid fa-clock text-info fs-3 me-3"></i><div><small>Next Suggested Date</small><h3>{{ suggested_date }}</h3></div></div></div>
+        </div>
+
+        <h4 class="mb-3">📅 Weekly Doctor Routine</h4>
+        <div class="row">
+            {% for day, d_list in routine.items() %}
+            <div class="col-md-4 mb-4">
+                <div class="day-header">{{ day }}</div>
+                <div class="bg-white p-3 border rounded-bottom">
+                    {% if d_list %}
+                        {% for d in d_list %}
+                        <div class="border-bottom pb-2 mb-2">
+                            <strong>{{ d['name'] }}</strong> <span class="badge bg-secondary float-end">{{ d['slots'] }} Slots</span><br>
+                            <small class="badge bg-info text-dark">{{ d['specialty'] }}</small><br>
+                            <small class="text-primary">{{ d['shift_start'] }} - {{ d['shift_end'] }}</small>
+                        </div>
+                        {% endfor %}
+                    {% else %}<p class="text-muted text-center py-3">No Doctors Scheduled</p>{% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div id="admission" class="section">
+        <div class="card p-4 mx-auto" style="max-width: 800px;">
+            <h3>New Admission</h3>
+            <form method="POST" action="/add_patient">
+                <div class="row g-3">
+                    <div class="col-md-6"><label>Name</label><input class="form-control" name="name" required></div>
+                    <div class="col-md-3"><label>Age</label><input type="number" class="form-control" name="age" required></div>
+                    <div class="col-md-3"><label>Gender</label><select class="form-select" name="gender"><option>Male</option><option>Female</option></select></div>
+                    <div class="col-md-4"><label>Blood Group</label><select class="form-select" name="blood_group"><option>A+</option><option>B+</option><option>O+</option><option>AB+</option><option>A-</option><option>B-</option><option>O-</option><option>AB-</option></select></div>
+                    <div class="col-md-4"><label>Admission Date</label><input type="date" class="form-control" name="admission_date" required></div>
+                    <div class="col-md-4"><label>Disease Category</label>
+                        <select class="form-select" name="disease">
+                            <option>Cardiology</option><option>Neurology</option><option>Pediatrics</option><option>Orthopedics</option><option>Oncology</option><option>Gynecology</option><option>Dermatology</option><option>ENT</option><option>Urology</option><option>Psychiatry</option><option>Surgery</option><option>Endocrinology</option><option>Ophthalmology</option><option>Radiology</option><option>General Medicine</option>
+                        </select>
+                    </div>
+                    <div class="col-md-12"><label>Select Doctor</label>
+                        <select class="form-select" name="doctor">
+                            {% if doctors %}
+                                {% for d in doctors %}<option>{{ d['name'] }} ({{ d['specialty'] }})</option>{% endfor %}
+                            {% else %}<option disabled>Register a doctor first</option>{% endif %}
+                        </select>
+                    </div>
+                    <div class="col-md-12"><label>History/Notes</label><textarea class="form-control" name="notes" rows="3"></textarea></div>
+                    <button class="btn btn-success mt-3 w-100">Admit Patient</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="doctor" class="section">
+        <div class="card p-4 mx-auto" style="max-width: 800px;">
+            <h3>Register Specialist</h3>
+            <form method="POST" action="/add_doctor">
+                <div class="row g-3">
+                    <div class="col-md-6"><label>Doctor Name</label><input class="form-control" name="doc_name" required></div>
+                    <div class="col-md-6"><label>Qualification</label><input class="form-control" name="qual" required></div>
+                    <div class="col-md-6"><label>Specialty</label>
+                        <select class="form-select" name="specialty">
+                            <option>Cardiology</option><option>Neurology</option><option>Pediatrics</option><option>Orthopedics</option><option>Oncology</option><option>Gynecology</option><option>Dermatology</option><option>ENT</option><option>Urology</option><option>Psychiatry</option><option>Surgery</option><option>Endocrinology</option><option>Ophthalmology</option><option>Radiology</option><option>General Medicine</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6"><label>Daily Slots</label><input type="number" class="form-control" name="slots" required></div>
+                    <div class="col-md-6"><label>Shift Start</label><input type="time" class="form-control" name="shift_start" required></div>
+                    <div class="col-md-6"><label>Shift End</label><input type="time" class="form-control" name="shift_end" required></div>
+                    <div class="col-12"><label>Available Days</label><br>
+                        {% for d in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] %}
+                        <div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" name="days" value="{{ d }}"> {{ d }}</div>
+                        {% endfor %}
+                    </div>
+                    <button class="btn btn-primary mt-3 w-100">Add Doctor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="history" class="section">
+        <div class="card p-4">
+            <h3>Clinical History</h3>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead class="table-light"><tr><th>Patient</th><th>Condition</th><th>Doctor</th><th>Stay Period</th></tr></thead>
+                    <tbody>
+                        {% for p in patients %}
+                        <tr>
+                            <td><strong>{{ p['name'] }}</strong><br><small>{{ p['age'] }} | {{ p['gender'] }} | {{ p['blood_group'] }}</small></td>
+                            <td><span class="badge bg-warning text-dark">{{ p['disease'] }}</span></td>
+                            <td>{{ p['doctor'] }}</td>
+                            <td><small>{{ p['admission_date'] }} to {{ p['discharge_date'] }}</small></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="inventory" class="section">
+        <div class="card p-4">
+            <h3>Inventory Management</h3>
+            <div class="row">
+                {% for item, qty in inventory.items()|sort %}
+                <div class="col-md-3"><div class="inventory-item shadow-sm {% if qty < 20 %}border-danger text-danger{% endif %}"><strong>{{ item }}</strong><br>{{ qty }} Units</div></div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+function showSection(id, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active-section'));
+    document.getElementById(id).classList.add('active-section');
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    el.classList.add('active');
+}
+</script>
+</body>
+</html>
